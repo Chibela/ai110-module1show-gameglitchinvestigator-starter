@@ -59,3 +59,23 @@ def test_hard_range_is_larger_than_normal():
     _, hard_high = get_range_for_difficulty("Hard")
     _, normal_high = get_range_for_difficulty("Normal")
     assert hard_high > normal_high, f"Hard range ({hard_high}) should exceed Normal range ({normal_high})"
+
+# Bug 4: New Game button didn't reset game status, so the game-over/win screen
+# persisted after clicking "New Game" and no new game was actually started.
+
+def test_new_game_state_resets_status_to_playing():
+    # After the fix, build_new_game_state returns status="playing" so the game
+    # accepts guesses instead of hitting the st.stop() guard immediately.
+    from logic_utils import build_new_game_state
+    state = build_new_game_state("Normal")
+    assert state["status"] == "playing", f"Expected 'playing', got '{state['status']}'"
+
+def test_new_game_state_respects_difficulty_range():
+    # Before the fix, new_game hardcoded randint(1, 100) regardless of difficulty.
+    # After the fix, the range comes from get_range_for_difficulty so Easy tops out at 20.
+    from logic_utils import build_new_game_state, get_range_for_difficulty
+    state = build_new_game_state("Easy")
+    _, easy_high = get_range_for_difficulty("Easy")
+    assert state["secret"] <= easy_high, (
+        f"Easy new-game secret {state['secret']} exceeds Easy max {easy_high}"
+    )

@@ -44,10 +44,12 @@ Document at least 3 bugs you found. Add rows as needed.
 ## 3. Debugging and testing your fixes
 
 - How did you decide whether a bug was really fixed?
-  - 
+  - Whenever I fix a bug, I asked claude to give test cases that would actually verify the bug I was just fixing. Then I would run them to see if it was actually fixed. I also tried to test the game manually by playing it and trying to reproduce the bug. If I couldn't reproduce it then I would consider it fixed.
 - Describe at least one test you ran (manual or using pytest)  
   and what it showed you about your code.
+  - One test I ran was to check if the hints were correct after fixing the hint logic. I checked the secret code from the Developer Debug Info and then made guesses that were both higher and lower than the secret code. I verified that the game provided the correct hints ("Go Higher" for lower guesses and "Go Lower" for higher guesses). This test showed me that the hint logic was now working correctly and providing accurate feedback to the player.
 - Did AI help you design or understand any tests? How?
+  - Yes, AI (Claude to be specific) helped me come up with the test cases which were placed in test_bugs.py. For instance, after fixing the bug that allowed guesses outside the difficulty range, guessing 25 in a 1-20 range should be rejected. I used this test case to verify that the fix was successful.
 
 ---
 

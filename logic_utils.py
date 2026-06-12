@@ -31,3 +31,15 @@ def check_guess(guess, secret):
 def update_score(current_score: int, outcome: str, attempt_number: int):
     """Update score based on outcome and attempt number."""
     raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+
+
+def build_new_game_state(difficulty: str) -> dict:
+    """Return a fresh state dict for a new game at the given difficulty."""
+    import random
+    low, high = get_range_for_difficulty(difficulty)
+    return {
+        "secret": random.randint(low, high),
+        "attempts": 0,
+        "status": "playing",
+        "history": [],
+    }
