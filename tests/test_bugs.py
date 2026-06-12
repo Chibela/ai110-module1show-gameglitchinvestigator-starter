@@ -28,3 +28,19 @@ def test_too_low_message_correct_when_secret_is_string():
     outcome, message = check_guess(13, "20")
     assert outcome == "Too Low"
     assert "HIGHER" in message, f"Expected 'HIGHER' in message but got: '{message}'"
+
+# Bug 2: Game rejects guesses outside the allowed difficulty range
+
+def test_easy_rejects_guess_above_range():
+    # Easy mode is 1–20; a guess of 25 should be outside the valid range
+    from logic_utils import get_range_for_difficulty
+    low, high = get_range_for_difficulty("Easy")
+    guess = 25
+    assert not (low <= guess <= high), f"25 should be out of Easy range ({low}–{high})"
+
+def test_hard_rejects_guess_above_range():
+    # Hard mode is 1–50; a guess of 75 should be outside the valid range
+    from logic_utils import get_range_for_difficulty
+    low, high = get_range_for_difficulty("Hard")
+    guess = 75
+    assert not (low <= guess <= high), f"75 should be out of Hard range ({low}–{high})"
