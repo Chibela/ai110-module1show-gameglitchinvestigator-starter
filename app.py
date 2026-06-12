@@ -6,8 +6,9 @@ def get_range_for_difficulty(difficulty: str):
         return 1, 20
     if difficulty == "Normal":
         return 1, 100
+    # FIXME: Logic breaks here
     if difficulty == "Hard":
-        return 1, 50
+        return 1, 150
     return 1, 100
 
 
@@ -90,6 +91,7 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
+# FIXME: Logic breaks here
 if "secret" not in st.session_state:
     st.session_state.secret = random.randint(low, high)
 
@@ -103,6 +105,16 @@ if "status" not in st.session_state:
     st.session_state.status = "playing"
 
 if "history" not in st.session_state:
+    st.session_state.history = []
+
+if "difficulty" not in st.session_state:
+    st.session_state.difficulty = difficulty
+
+if st.session_state.difficulty != difficulty:
+    st.session_state.difficulty = difficulty
+    st.session_state.secret = random.randint(low, high)
+    st.session_state.attempts = 1
+    st.session_state.status = "playing"
     st.session_state.history = []
 
 st.subheader("Make a guess")
@@ -154,7 +166,7 @@ if submit:
         st.session_state.history.append(raw_guess)
         st.error(err)
     else:
-        # FIXME: Logic breaks here — game accepts guesses outside the difficulty range
+        # FIXME: Logic breaks here — game accepted guesses outside the difficulty range
         if not (low <= guess_int <= high):
             st.error(f"Please enter a number between {low} and {high} for {difficulty} mode.")
         else:
