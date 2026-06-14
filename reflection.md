@@ -56,12 +56,14 @@ Document at least 3 bugs you found. Add rows as needed.
 ## 4. What did you learn about Streamlit and state?
 
 - How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
-
+  - One thing I learned about Streamlit is that it reruns the entire script everytime a user interacts with the app, foe instance in this game, everytime I made a guess, the script reran. This means that any variables or state get reset to the initial. However, Streamlit provides a way to maintain state across reruns using session state. Session state allows you to store values that persist even when the script reruns, which is essential for keeping track of things like the secret code, number of attempts, and game status in this game.
 ---
 
 ## 5. Looking ahead: your developer habits
 
 - What is one habit or strategy from this project that you want to reuse in future labs or projects?
-  - This could be a testing habit, a prompting strategy, or a way you used Git.
+  - One habit that I want to reuse in future projects is the way I used AI to help me with debugging and testing. I found it very helpful to ask AI for test cases that would verify the bugs I was fixing. This not only helped me ensure that the bugs were actually fixed but also gave me a better understanding of the code and how to test it effectively.
 - What is one thing you would do differently next time you work with AI on a coding task?
+  - One thing I would do differently next time is to add more context to my prompts when fixing the bugs. I found that if I provided the exact section where the code seems to have the bug I have fully described, it would take more time for it to locate because it goes through the entire code. This eats up more tokens and is not feasible espesically when you are dealing with a large codebase. So next time I would make sure to provide more specific context to help the AI locate the issue faster and give more accurate suggestions.
 - In one or two sentences, describe how this project changed the way you think about AI generated code.
+  - From this project I learned that AI generated code can seem impressive on the outside but its not always correct. I noticed this just from the starter code that was provided. Then even when you begin to debug and fix the code, one has to be very careful and not just accept the suggestions blindly. This is because some suggestions were good but others weren't.I also learned that AI can be a very helpful tool for debugging and testing but it should be used as a teammate rather than a crutch. It's important to understand the code and the bugs yourself in order to effectively use AI to help you fix them.

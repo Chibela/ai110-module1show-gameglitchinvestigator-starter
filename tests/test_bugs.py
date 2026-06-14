@@ -1,4 +1,4 @@
-from app import check_guess
+from app import check_guess, update_score, get_final_score
 
 # Bug 1: Backward hint messaging
 # When guess > secret, message said "Go HIGHER!" instead of "Go LOWER!",
@@ -79,3 +79,70 @@ def test_new_game_state_respects_difficulty_range():
     assert state["secret"] <= easy_high, (
         f"Easy new-game secret {state['secret']} exceeds Easy max {easy_high}"
     )
+
+# Bug 5: update_score had two scoring bugs:
+# 1. Win formula used attempt_number so a first-guess win scored 90 instead of 100;
+#    fixed to (attempt_number - 1) so perfect play earns a full 100.
+# 2. "Too High" on even attempt numbers rewarded +5 instead of penalizing -5,
+#    meaning overshooting was sometimes better than not guessing at all.
+# Additionally, scores could go negative on a loss; get_final_score clamps to 0.
+
+def test_win_on_first_attempt_gives_100_points():
+    # attempt 1, clean win from score 0 → 100 - 10*(1-1) = 100
+    score = update_score(0, "Win", 1)
+    assert score == 100, f"Expected 100 but got {score}"
+
+def test_win_on_later_attempt_scores_less():
+    # More attempts should always mean a lower win bonus
+    score_attempt1 = update_score(0, "Win", 1)
+    score_attempt5 = update_score(0, "Win", 5)
+    assert score_attempt5 < score_attempt1, (
+        f"Later win ({score_attempt5}) should score less than earlier win ({score_attempt1})"
+    )
+
+def test_win_score_floor_is_10():
+    # Very late win — bonus is clamped to a minimum of 10
+    score = update_score(0, "Win", 20)
+    assert score == 10, f"Expected floor of 10 but got {score}"
+
+def test_too_high_on_even_attempt_deducts_points():
+    # Before the fix, even attempts gave +5 (rewarded a wrong guess)
+    score = update_score(50, "Too High", 2)
+    assert score == 45, f"Expected 45 but got {score}"
+
+def test_too_high_on_odd_attempt_deducts_points():
+    score = update_score(50, "Too High", 3)
+    assert score == 45, f"Expected 45 but got {score}"
+
+def test_too_high_and_too_low_penalize_equally():
+    # Both wrong directions should cost the same -5
+    score_high = update_score(50, "Too High", 2)
+    score_low = update_score(50, "Too Low", 2)
+    assert score_high == score_low, (
+        f"Too High ({score_high}) and Too Low ({score_low}) should penalize equally"
+    )
+
+# Bug 5 (continued): score is clamped to 0 after every update so the value in
+# session state never goes negative — wrong guesses chip away at potential points
+# but the player never owes the game a debt.
+
+def test_wrong_guess_score_never_goes_below_zero():
+    # update_score returns -5 for a wrong guess from 0; clamping keeps it at 0
+    raw = update_score(0, "Too Low", 1)
+    assert max(0, raw) == 0
+
+def test_multiple_wrong_guesses_stay_at_zero():
+    # Repeated wrong guesses from 0 should never push score negative
+    score = 0
+    for attempt in range(1, 6):
+        score = max(0, update_score(score, "Too Low", attempt))
+    assert score == 0
+
+def test_final_score_clamps_negative_to_zero():
+    assert get_final_score(-25) == 0
+
+def test_final_score_preserves_positive_score():
+    assert get_final_score(80) == 80
+
+def test_final_score_is_zero_when_raw_is_zero():
+    assert get_final_score(0) == 0

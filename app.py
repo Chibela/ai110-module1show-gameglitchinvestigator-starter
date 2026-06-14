@@ -51,20 +51,26 @@ def check_guess(guess, secret):
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
     if outcome == "Win":
-        points = 100 - 10 * (attempt_number + 1)
+        # FIXME: Logic breaks here — formula used attempt_number so a first-guess win
+        # scored 90 instead of 100; fixed to (attempt_number - 1) so attempt 1 = 100
+        points = 100 - 10 * (attempt_number - 1)
         if points < 10:
             points = 10
         return current_score + points
 
+    # FIXME: Logic breaks here — even-attempt "Too High" guesses were rewarded +5
+    # instead of penalized; both wrong directions should cost the same -5
     if outcome == "Too High":
-        if attempt_number % 2 == 0:
-            return current_score + 5
         return current_score - 5
 
     if outcome == "Too Low":
         return current_score - 5
 
     return current_score
+
+
+def get_final_score(raw_score: int) -> int:
+    return max(0, raw_score)
 
 st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
 
@@ -95,8 +101,10 @@ st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 if "secret" not in st.session_state:
     st.session_state.secret = random.randint(low, high)
 
+# FIXME: Logic breaks here — initialized to 1 but new_game resets to 0,
+# so the first guess of the initial game scored differently than after a reset
 if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
+    st.session_state.attempts = 0
 
 if "score" not in st.session_state:
     st.session_state.score = 0
@@ -113,16 +121,13 @@ if "difficulty" not in st.session_state:
 if st.session_state.difficulty != difficulty:
     st.session_state.difficulty = difficulty
     st.session_state.secret = random.randint(low, high)
-    st.session_state.attempts = 1
+    st.session_state.attempts = 0
     st.session_state.status = "playing"
     st.session_state.history = []
 
 st.subheader("Make a guess")
 
-st.info(
-    f"Guess a number between 1 and 100. "
-    f"Attempts left: {attempt_limit - st.session_state.attempts}"
-)
+info_bar = st.empty()
 
 with st.expander("Developer Debug Info"):
     st.write("Secret:", st.session_state.secret)
@@ -157,6 +162,9 @@ if st.session_state.status != "playing":
         st.success("You already won. Start a new game to play again.")
     else:
         st.error("Game over. Start a new game to try again.")
+    col_a, col_b = st.columns(2)
+    col_a.metric("Game Score", st.session_state.score)
+    col_b.metric("Final Score", get_final_score(st.session_state.score))
     st.stop()
 
 if submit:
@@ -174,37 +182,41 @@ if submit:
         else:
             st.session_state.history.append(guess_int)
 
-            if st.session_state.attempts % 2 == 0:
-                secret = str(st.session_state.secret)
-            else:
-                secret = st.session_state.secret
-
-            outcome, message = check_guess(guess_int, secret)
+            # FIXME: Logic breaks here — even attempts cast secret to str, causing
+            # string comparison in check_guess which flips hints for different-length numbers
+            outcome, message = check_guess(guess_int, st.session_state.secret)
 
             if show_hint:
                 st.warning(message)
 
-            st.session_state.score = update_score(
+            score_before = st.session_state.score
+            st.session_state.score = max(0, update_score(
                 current_score=st.session_state.score,
                 outcome=outcome,
                 attempt_number=st.session_state.attempts,
-            )
+            ))
 
             if outcome == "Win":
                 st.balloons()
                 st.session_state.status = "won"
-                st.success(
-                    f"You won! The secret was {st.session_state.secret}. "
-                    f"Final score: {st.session_state.score}"
-                )
+                win_points = st.session_state.score - score_before
+                st.success(f"You won! The secret was {st.session_state.secret}.")
+                col_a, col_b = st.columns(2)
+                col_a.metric("Game Score", win_points)
+                col_b.metric("Final Score", st.session_state.score)
             else:
                 if st.session_state.attempts >= attempt_limit:
                     st.session_state.status = "lost"
-                    st.error(
-                        f"Out of attempts! "
-                        f"The secret was {st.session_state.secret}. "
-                        f"Score: {st.session_state.score}"
-                    )
+                    st.error(f"Out of attempts! The secret was {st.session_state.secret}.")
+                    col_a, col_b = st.columns(2)
+                    col_a.metric("Game Score", st.session_state.score)
+                    col_b.metric("Final Score", get_final_score(st.session_state.score))
+
+info_bar.info(
+    f"Guess a number between {low} and {high}. "
+    f"Attempts left: {attempt_limit - st.session_state.attempts} | "
+    f"Score: {st.session_state.score}"
+)
 
 st.divider()
 st.caption("Built by an AI that claims this code is production-ready.")
